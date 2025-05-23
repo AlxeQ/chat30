@@ -1,4 +1,3 @@
-import io
 import os
 import pandas as pd
 import docx2txt
