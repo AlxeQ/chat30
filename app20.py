@@ -53,7 +53,7 @@ def extract_text(file):
         return "不支持的文件类型"
 
 def analyze_interview(transcript, outline):
-   prompt = f"""
+    prompt = f"""
 你是一个专业的访谈内容结构化记录专家，你的任务是帮助团队**完整还原受访者讲述的每个观点、完整案例与细节**，并将其与访谈大纲逐一比对、分类归档。
 
 **一、大纲逐条比对**
@@ -85,7 +85,7 @@ def analyze_interview(transcript, outline):
 {outline}
 
 【访谈原文】
-{text}
+{transcript}
 """
     return call_deepseek_api(prompt)
 
