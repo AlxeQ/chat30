@@ -107,43 +107,26 @@ def main():
         with st.spinner("⏳ 正在提取与分析内容，请稍候..."):
             transcript = extract_text(interview_file)
             outline = extract_text(outline_file)
+
             result_markdown = analyze_interview(transcript, outline, target)
 
         st.markdown("### ✅ 分析结果")
         st.markdown(result_markdown)
 
-        # 表格解析和Excel导出功能（最终修复版）
         try:
-            # 检查是否是有效的markdown表格
-            table_lines = [line for line in result_markdown.split('\n') 
-                         if line.strip().startswith('|') and '---' not in line]
-            
-            if len(table_lines) >= 2:  # 至少包含表头和数据行
-                # 使用更健壮的表格解析方式
-                df = pd.read_csv(io.StringIO('\n'.join(table_lines)), 
-                                sep='|', 
-                                skipinitialspace=True,
-                                header=0)
-                df = df.iloc[:, 1:-1]  # 移除markdown表格首尾的空白列
-                
-                # 生成Excel文件（100%可靠写法）
-                excel_buffer = io.BytesIO()
-                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                    df.to_excel(writer, index=False, sheet_name='分析结果')
-                excel_buffer.seek(0)
-                
-                # 添加下载按钮
+            df_list = pd.read_html(result_markdown, flavor="bs4")
+            if df_list:
+                df = df_list[0]
                 st.download_button(
-                    label="💾 下载Excel表格",
-                    data=excel_buffer,
-                    file_name="分析结果.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+                    label="📥 下载结果为 Excel",
+                    data=df.to_excel(index=False, engine='openpyxl'),
+                    file_name="interview_analysis.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             else:
-                st.info("ℹ️ 分析结果中未包含表格数据")
-                
-        except pd.errors.EmptyDataError:
-            st.info("ℹ️ 未检测到可转换的表格数据")
+                st.warning("⚠️ 未能识别表格数据，请检查返回的Markdown格式是否正确。")
         except Exception as e:
-            st.error(f"表格转换失败：{str(e)}")
+            st.error(f"❌ 转换结果失败：{e}")
+
+if __name__ == "__main__":
+    main()
