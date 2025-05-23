@@ -5,3 +5,4 @@ docx2txt
 requests
 openpyxl
 html5lib
+beautifulsoup4
