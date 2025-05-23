@@ -52,7 +52,7 @@ def extract_text(file):
     else:
         return "不支持的文件类型"
 
-def analyze_interview(transcript, outline):
+def analyze_interview(transcript, outline, target):
     prompt = f"""
 你是一个专业的访谈内容结构化记录专家，你的任务是帮助团队**完整还原受访者讲述的每个观点、完整案例与细节**，并将其与访谈大纲逐一比对、分类归档。
 
@@ -104,7 +104,7 @@ def main():
             transcript = extract_text(interview_file)
             outline = extract_text(outline_file)
 
-            result_markdown = analyze_interview(transcript, outline)
+            result_markdown = analyze_interview(transcript, outline, target)
 
         st.markdown("### ✅ 分析结果")
         # 修改这里：移除unsafe_allow_html=True参数
