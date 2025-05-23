@@ -112,27 +112,37 @@ def main():
         st.markdown("### ✅ 分析结果")
         st.markdown(result_markdown)
 
-        # 显示原始 Markdown 内容供调试
-        st.markdown("### 🧾 原始 Markdown 内容")
-        st.text_area("下面是 result_markdown 的原始内容（如含有表格应以 | 开头的行）", result_markdown, height=300)
+       # 工具函数：将 Markdown 表格手动解析为 DataFrame（优化版）
+       def markdown_table_to_df(md_table_str):
+           lines = [line.strip() for line in md_table_str.strip().split('\n') if line.strip().startswith('|')]
+           if len(lines) < 3:
+               raise ValueError("结果中未检测到表格数据")
+    
+           headers = [h.strip() for h in lines[0].strip('|').split('|')]
+           data = []
+           for line in lines[2:]:  # 跳过表头和分隔线
+               row = [cell.strip() for cell in line.strip('|').split('|')]
+               if len(row) == len(headers):
+                   data.append(row)
+    
+           return pd.DataFrame(data, columns=headers)
 
-        # 尝试解析并提供下载按钮
-        try:
+       # Excel导出功能（修复版）
+       try:
            df = markdown_table_to_df(result_markdown)
     
-           # 创建 Excel 文件对象
-           output = io.BytesIO()
-           with pd.ExcelWriter(output, engine='openpyxl') as writer:
-               df.to_excel(writer, index=False)
+           # 关键修复：使用内存文件流
+           excel_data = io.BytesIO()
+           df.to_excel(excel_data, index=False, engine='openpyxl')
+           excel_data.seek(0)  # 重置指针位置
     
-        # 重置指针位置
-        output.seek(0)
-    
-        st.download_button(
-            label="📥 下载结果为 Excel",
-            data=output,
-            file_name="interview_analysis.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+           st.download_button(
+               label="📥 下载Excel结果",
+               data=excel_data,
+               file_name="访谈分析结果.xlsx",
+               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-except Exception as e:
-    st.error(f"❌ 转换结果失败：{e}")
+      except ValueError as e:
+          st.warning(f"⚠️ {str(e)}（结果中未包含表格）")
+      except Exception as e:
+          st.error(f"❌ 导出失败：{str(e)}")
