@@ -87,8 +87,7 @@ def analyze_interview(transcript, outline):
 【访谈原文】
 {text}
 """
-
-    return call_deepseek_api(prompt)
+return call_deepseek_api(prompt)
 
 def main():
     st.set_page_config(page_title="访谈结构整理工具", layout="wide")
