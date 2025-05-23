@@ -4,3 +4,4 @@ pdfplumber
 docx2txt
 requests
 openpyxl
+html5lib
