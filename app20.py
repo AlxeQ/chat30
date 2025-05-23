@@ -112,37 +112,38 @@ def main():
         st.markdown("### ✅ 分析结果")
         st.markdown(result_markdown)
 
-       # 工具函数：将 Markdown 表格手动解析为 DataFrame（优化版）
-       def markdown_table_to_df(md_table_str):
-           lines = [line.strip() for line in md_table_str.strip().split('\n') if line.strip().startswith('|')]
-           if len(lines) < 3:
-               raise ValueError("结果中未检测到表格数据")
-    
-           headers = [h.strip() for h in lines[0].strip('|').split('|')]
-           data = []
-           for line in lines[2:]:  # 跳过表头和分隔线
-               row = [cell.strip() for cell in line.strip('|').split('|')]
-               if len(row) == len(headers):
-                   data.append(row)
-    
-           return pd.DataFrame(data, columns=headers)
-
-       # Excel导出功能（修复版）
-       try:
-           df = markdown_table_to_df(result_markdown)
-    
-           # 关键修复：使用内存文件流
-           excel_data = io.BytesIO()
-           df.to_excel(excel_data, index=False, engine='openpyxl')
-           excel_data.seek(0)  # 重置指针位置
-    
-           st.download_button(
-               label="📥 下载Excel结果",
-               data=excel_data,
-               file_name="访谈分析结果.xlsx",
-               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-      except ValueError as e:
-          st.warning(f"⚠️ {str(e)}（结果中未包含表格）")
-      except Exception as e:
-          st.error(f"❌ 导出失败：{str(e)}")
+        # 表格解析和Excel导出功能（最终修复版）
+        try:
+            # 检查是否是有效的markdown表格
+            table_lines = [line for line in result_markdown.split('\n') 
+                         if line.strip().startswith('|') and '---' not in line]
+            
+            if len(table_lines) >= 2:  # 至少包含表头和数据行
+                # 使用更健壮的表格解析方式
+                df = pd.read_csv(io.StringIO('\n'.join(table_lines)), 
+                                sep='|', 
+                                skipinitialspace=True,
+                                header=0)
+                df = df.iloc[:, 1:-1]  # 移除markdown表格首尾的空白列
+                
+                # 生成Excel文件（100%可靠写法）
+                excel_buffer = io.BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                    df.to_excel(writer, index=False, sheet_name='分析结果')
+                excel_buffer.seek(0)
+                
+                # 添加下载按钮
+                st.download_button(
+                    label="💾 下载Excel表格",
+                    data=excel_buffer,
+                    file_name="分析结果.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+            else:
+                st.info("ℹ️ 分析结果中未包含表格数据")
+                
+        except pd.errors.EmptyDataError:
+            st.info("ℹ️ 未检测到可转换的表格数据")
+        except Exception as e:
+            st.error(f"表格转换失败：{str(e)}")
