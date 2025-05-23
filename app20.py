@@ -93,13 +93,16 @@ def main():
     st.set_page_config(page_title="访谈结构整理工具", layout="wide")
     st.title("📋 访谈结构整理 MVP 工具")
 
+    # 新增访谈目标输入框
+    target = st.text_area("请输入访谈目标（例如：本次访谈主要目标是什么）")
+
     st.markdown("### 第一步：上传访谈文件（pdf、docx、txt）")
     interview_file = st.file_uploader("上传访谈记录文件：", type=["pdf", "docx", "txt"])
 
     st.markdown("### 第二步：上传访谈大纲（docx、txt）")
     outline_file = st.file_uploader("上传访谈大纲文件：", type=["docx", "txt"])
 
-    if st.button("🚀 开始分析") and interview_file and outline_file:
+    if st.button("🚀 开始分析") and interview_file and outline_file and target.strip() != "":
         with st.spinner("⏳ 正在提取与分析内容，请稍候..."):
             transcript = extract_text(interview_file)
             outline = extract_text(outline_file)
@@ -107,10 +110,8 @@ def main():
             result_markdown = analyze_interview(transcript, outline, target)
 
         st.markdown("### ✅ 分析结果")
-        # 修改这里：移除unsafe_allow_html=True参数
         st.markdown(result_markdown)
 
-        # 导出Excel按钮
         try:
             df_list = pd.read_html(result_markdown, flavor="bs4")
             if df_list:
@@ -128,3 +129,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
