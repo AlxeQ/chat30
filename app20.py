@@ -112,21 +112,29 @@ def main():
         st.markdown("### ✅ 分析结果")
         st.markdown(result_markdown)
 
+         def markdown_table_to_df(md_table_str):
+            lines = [line for line in md_table_str.strip().split('\n') if line.startswith('|')]
+            if len(lines) < 3:
+                raise ValueError("无法识别有效的Markdown表格。")
+            header_line = lines[0]
+            data_lines = lines[2:]  # 跳过分隔线
+            headers = [h.strip() for h in header_line.strip('|').split('|')]
+            data = []
+            for line in data_lines:
+                row = [cell.strip() for cell in line.strip('|').split('|')]
+                if len(row) == len(headers):
+                    data.append(row)
+            return pd.DataFrame(data, columns=headers)
+
         try:
-            df_list = pd.read_html(result_markdown, flavor="bs4")
-            if df_list:
-                df = df_list[0]
-                st.download_button(
-                    label="📥 下载结果为 Excel",
-                    data=df.to_excel(index=False, engine='openpyxl'),
-                    file_name="interview_analysis.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            else:
-                st.warning("⚠️ 未能识别表格数据，请检查返回的Markdown格式是否正确。")
+            df = markdown_table_to_df(result_markdown)
+            st.download_button(
+                label="📥 下载结果为 Excel",
+                data=df.to_excel(index=False, engine='openpyxl'),
+                file_name="interview_analysis.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         except Exception as e:
             st.error(f"❌ 转换结果失败：{e}")
 
-if __name__ == "__main__":
-    main()
 
