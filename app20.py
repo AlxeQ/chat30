@@ -106,14 +106,26 @@ def main():
         with st.spinner("⏳ 正在提取与分析内容，请稍候..."):
             transcript = extract_text(interview_file)
             outline = extract_text(outline_file)
-
             result_markdown = analyze_interview(transcript, outline, target)
 
         st.markdown("### ✅ 分析结果")
         st.markdown(result_markdown)
-# 显示原始 Markdown 内容供调试
-st.markdown("### 🧾 原始 Markdown 内容")
-st.text_area("下面是 result_markdown 的原始内容（如含有表格应以 | 开头的行）", result_markdown, height=300)
+
+        # 显示原始 Markdown 内容供调试
+        st.markdown("### 🧾 原始 Markdown 内容")
+        st.text_area("下面是 result_markdown 的原始内容（如含有表格应以 | 开头的行）", result_markdown, height=300)
+
+        # 尝试解析并提供下载按钮
+        try:
+            df = markdown_table_to_df(result_markdown)
+            st.download_button(
+                label="📥 下载结果为 Excel",
+                data=df.to_excel(index=False, engine='openpyxl'),
+                file_name="interview_analysis.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        except Exception as e:
+            st.error(f"❌ 转换结果失败：{e}")
 
 # 工具函数：将 Markdown 表格手动解析为 DataFrame
 def markdown_table_to_df(md_table_str):
@@ -133,16 +145,7 @@ def markdown_table_to_df(md_table_str):
 
     return pd.DataFrame(data, columns=headers)
 
-# 尝试解析并提供下载按钮
-try:
-    df = markdown_table_to_df(result_markdown)
-    st.download_button(
-        label="📥 下载结果为 Excel",
-        data=df.to_excel(index=False, engine='openpyxl'),
-        file_name="interview_analysis.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-except Exception as e:
-    st.error(f"❌ 转换结果失败：{e}")
+if __name__ == "__main__":
+    main()
 
 
