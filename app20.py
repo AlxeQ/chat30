@@ -1,3 +1,4 @@
+import io
 import os
 import pandas as pd
 import docx2txt
@@ -117,35 +118,21 @@ def main():
 
         # 尝试解析并提供下载按钮
         try:
-            df = markdown_table_to_df(result_markdown)
-            st.download_button(
-                label="📥 下载结果为 Excel",
-                data=df.to_excel(index=False, engine='openpyxl'),
-                file_name="interview_analysis.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        except Exception as e:
-            st.error(f"❌ 转换结果失败：{e}")
-
-# 工具函数：将 Markdown 表格手动解析为 DataFrame
-def markdown_table_to_df(md_table_str):
-    lines = [line.strip() for line in md_table_str.strip().split('\n') if line.strip().startswith('|')]
-    if len(lines) < 3:
-        raise ValueError("⚠️ 无法识别有效的 Markdown 表格，请检查内容。")
-
-    header_line = lines[0]
-    data_lines = lines[2:]  # 跳过分隔线
-    headers = [h.strip() for h in header_line.strip('|').split('|')]
-
-    data = []
-    for line in data_lines:
-        row = [cell.strip() for cell in line.strip('|').split('|')]
-        if len(row) == len(headers):
-            data.append(row)
-
-    return pd.DataFrame(data, columns=headers)
-
-if __name__ == "__main__":
-    main()
-
-
+           df = markdown_table_to_df(result_markdown)
+    
+           # 创建 Excel 文件对象
+           output = io.BytesIO()
+           with pd.ExcelWriter(output, engine='openpyxl') as writer:
+               df.to_excel(writer, index=False)
+    
+        # 重置指针位置
+        output.seek(0)
+    
+        st.download_button(
+            label="📥 下载结果为 Excel",
+            data=output,
+            file_name="interview_analysis.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+except Exception as e:
+    st.error(f"❌ 转换结果失败：{e}")
